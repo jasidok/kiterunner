@@ -1,0 +1,78 @@
+# 👻 STEALTH MODE CONFIGURATION
+# Maximum stealth for sensitive targets
+
+output: "json"
+verbose: "error"
+quiet: true
+
+# Conservative performance settings
+max-connection-per-host: 2
+max-parallel-hosts: 5
+timeout: "30s"
+delay: "2s"
+
+# Stealth performance
+adaptive-concurrency: false
+performance-mode: "conservative"
+max-memory: 500
+enable-cache: false
+
+# Maximum stealth settings
+enable-stealth: true
+stealth-mode: "ghost"
+stealth-delay-min: 1000
+stealth-delay-max: 5000
+stealth-proxy: ""  # Configure your proxy here
+
+# Stealth user agents
+stealth-user-agents:
+  - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+  - "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15"
+  - "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"
+
+# Selective AI features (lightweight)
+enable-all-ai-features: false
+enable-parameter-discovery: false
+enable-vulnerability-detection: true
+enable-response-intelligence: true
+enable-smart-wordlist-generation: false
+
+# Conservative discovery
+enable-multi-method-discovery: false
+enable-header-based-discovery: false
+enable-encoding-bypass: true
+
+# Minimal reporting
+enable-risk-scoring: true
+risk-threshold: "high"
+enable-advanced-output: false
+output-formats: [ "json" ]
+
+# No notifications in stealth mode
+enable-notifications: false
+
+# Stealth headers
+headers:
+  - "accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+  - "accept-language: en-US,en;q=0.5"
+  - "accept-encoding: gzip, deflate"
+  - "dnt: 1"
+  - "connection: keep-alive"
+  - "upgrade-insecure-requests: 1"
+
+# Conservative status codes
+success-status-codes: [ 200, 301, 302, 401, 403 ]
+fail-status-codes: [ 400, 404, 500, 502, 503, 504 ]
+
+# Reduced scanning depth
+preflight-depth: 0
+quarantine-threshold: 5
+wildcard-detection: true
+
+# Small wordlists for stealth
+assetnote-wordlists:
+  - "apiroutes-240528:1000"
+  - "raft-small-words:500"
+
+# Stealth output
+output-dir: "./stealth-results"

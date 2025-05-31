@@ -1,0 +1,73 @@
+# 🚀 AGGRESSIVE BUG BOUNTY MODE CONFIGURATION
+# Maximum performance for bug bounty hunting
+
+output: "json"
+verbose: "info"
+quiet: false
+
+# High-performance settings
+max-connection-per-host: 25
+max-parallel-hosts: 300
+timeout: "15s"
+delay: "0s"
+
+# Advanced performance
+adaptive-concurrency: true
+target-response-time: "300ms"
+performance-mode: "aggressive"
+max-memory: 2000
+enable-cache: true
+max-cache-size: 500
+
+# Enable ALL AI features
+enable-all-ai-features: true
+enable-all-phase2-features: true
+enable-all-phase4-features: true
+
+# AI Features
+enable-parameter-discovery: true
+enable-vulnerability-detection: true
+enable-response-intelligence: true
+enable-smart-wordlist-generation: true
+
+# Advanced discovery
+enable-multi-method-discovery: true
+enable-header-based-discovery: true
+enable-encoding-bypass: true
+
+# Risk scoring and reporting
+enable-risk-scoring: true
+risk-threshold: "low"
+enable-advanced-output: true
+output-formats: [ "json", "csv", "html", "markdown", "burp", "nuclei" ]
+
+# Notifications
+enable-notifications: true
+notification-level: "medium"
+
+# Bug bounty settings
+researcher: "YourName"
+bounty-platform: "hackerone"
+
+# Reports
+output-dir: "./bug-bounty-results"
+html-report: "./bug-bounty-results/vulnerability-report.html"
+markdown-report: "./bug-bounty-results/bug-bounty-submission.md"
+nuclei-output: "./bug-bounty-results/nuclei-templates.yaml"
+
+# Wordlists
+assetnote-wordlists:
+  - "apiroutes-240528:50000"
+  - "parameters-240528:10000"
+  - "raft-large-words:20000"
+
+# Headers for better results
+headers:
+  - "x-forwarded-for: 127.0.0.1"
+  - "x-real-ip: 127.0.0.1"
+  - "x-originating-ip: 127.0.0.1"
+  - "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+success-status-codes: [ 200, 201, 202, 204, 301, 302, 307, 308, 401, 403, 500 ]
+preflight-depth: 2
+quarantine-threshold: 15
