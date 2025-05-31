@@ -57,6 +57,64 @@ type ScanOptions struct {
 	BlacklistRedirectDomains []string
 	FilterAPIs               map[string]interface{}
 
+	// New AI-powered features
+	ParameterDiscovery      bool
+	VulnerabilityDetection  bool
+	ResponseIntelligence    bool
+	SmartWordlistGeneration bool
+	AllAIFeatures           bool
+
+	// Phase 2: Advanced Discovery Features
+	MultiMethodDiscovery bool
+	HeaderBasedDiscovery bool
+	EncodingBypass       bool
+	AllPhase2Features    bool
+
+	// Phase 4: Intelligence & Reporting Features
+	RiskScoring       bool
+	Notifications     bool
+	AdvancedOutput    bool
+	AllPhase4Features bool
+
+	// Phase 5: Stealth and Performance Features
+	EnableStealth       bool
+	StealthMode         string
+	PerformanceMode     string
+	AdaptiveConcurrency bool
+	TargetResponseTime  time.Duration
+	EnableCache         bool
+	MaxCacheSize        int
+	MaxMemoryUsage      int
+	StealthProxy        string
+	StealthUserAgents   []string
+	StealthDelayMin     int
+	StealthDelayMax     int
+
+	// Output options
+	OutputFormats        []string
+	OutputDirectory      string
+	BurpProjectOutput    string
+	NucleiTemplateOutput string
+	MarkdownReportOutput string
+	HTMLReportOutput     string
+	SARIFOutput          string
+
+	// Risk scoring options
+	RiskThreshold string
+
+	// Notification options
+	NotificationConfig string
+	SlackWebhook       string
+	DiscordWebhook     string
+	EmailConfig        string
+	WebhookURL         string
+	NotificationLevel  string
+
+	// Bug bounty context
+	BountyProgram  string
+	BountyPlatform string
+	Researcher     string
+
 	// internal fields for logging
 	extensions                 []string
 	dirsearchCompatabilityMode bool
@@ -72,7 +130,7 @@ type ScanOptions struct {
 }
 
 func (s ScanOptions) KiterunnerOptions() []kiterunner.ConfigOption {
-	return []kiterunner.ConfigOption{
+	opts := []kiterunner.ConfigOption{
 		kiterunner.MaxRedirects(s.MaxRedirects),
 		kiterunner.MaxParallelHosts(s.MaxParallelHosts),
 		kiterunner.MaxConnPerHost(s.MaxConnPerHost),
@@ -90,6 +148,49 @@ func (s ScanOptions) KiterunnerOptions() []kiterunner.ConfigOption {
 		kiterunner.TargetQuarantineThreshold(s.QuarantineThreshold),
 		kiterunner.SkipPreflight(!s.PrecheckTargets),
 	}
+
+	// Phase 5: Apply stealth and performance configurations
+	if s.StealthMode != "" {
+		opts = append(opts, kiterunner.QuickStealthMode(s.StealthMode))
+	}
+
+	if s.PerformanceMode != "" {
+		opts = append(opts, kiterunner.PerformanceMode(s.PerformanceMode))
+	}
+
+	if s.AdaptiveConcurrency {
+		targetTime := s.TargetResponseTime
+		if targetTime == 0 {
+			targetTime = 500 * time.Millisecond
+		}
+		opts = append(opts, kiterunner.EnableAdaptiveConcurrency(targetTime))
+	}
+
+	if s.EnableCache {
+		cacheSize := s.MaxCacheSize
+		if cacheSize == 0 {
+			cacheSize = 100
+		}
+		opts = append(opts, kiterunner.EnableSmartCache(cacheSize))
+	}
+
+	if s.MaxMemoryUsage > 0 {
+		opts = append(opts, kiterunner.SetMemoryLimit(s.MaxMemoryUsage))
+	}
+
+	if s.StealthProxy != "" {
+		opts = append(opts, kiterunner.SetStealthProxy(s.StealthProxy))
+	}
+
+	if len(s.StealthUserAgents) > 0 {
+		opts = append(opts, kiterunner.SetStealthUserAgents(s.StealthUserAgents))
+	}
+
+	if s.StealthDelayMin > 0 || s.StealthDelayMax > 0 {
+		opts = append(opts, kiterunner.SetStealthDelay(s.StealthDelayMin, s.StealthDelayMax))
+	}
+
+	return opts
 }
 
 func (s ScanOptions) String() string {
@@ -115,6 +216,34 @@ func (s ScanOptions) String() string {
 		"QuarantineThreshold":      s.QuarantineThreshold,
 		"PreflightDepth":           s.PreflightDepth,
 		"FilterAPIs":               s.FilterAPIs,
+		"ParameterDiscovery":       s.ParameterDiscovery,
+		"VulnerabilityDetection":   s.VulnerabilityDetection,
+		"ResponseIntelligence":     s.ResponseIntelligence,
+		"SmartWordlistGeneration":  s.SmartWordlistGeneration,
+		"AllAIFeatures":            s.AllAIFeatures,
+		"MultiMethodDiscovery":     s.MultiMethodDiscovery,
+		"HeaderBasedDiscovery":     s.HeaderBasedDiscovery,
+		"EncodingBypass":           s.EncodingBypass,
+		"AllPhase2Features":        s.AllPhase2Features,
+		"RiskScoring":              s.RiskScoring,
+		"Notifications":            s.Notifications,
+		"AdvancedOutput":           s.AdvancedOutput,
+		"AllPhase4Features":        s.AllPhase4Features,
+		"EnableStealth":            s.EnableStealth,
+		"StealthMode":              s.StealthMode,
+		"PerformanceMode":          s.PerformanceMode,
+		"AdaptiveConcurrency":      s.AdaptiveConcurrency,
+		"TargetResponseTime":       s.TargetResponseTime,
+		"EnableCache":              s.EnableCache,
+		"MaxCacheSize":             s.MaxCacheSize,
+		"MaxMemoryUsage":           s.MaxMemoryUsage,
+		"StealthProxy":             s.StealthProxy,
+		"StealthUserAgents":        s.StealthUserAgents,
+		"StealthDelayMin":          s.StealthDelayMin,
+		"StealthDelayMax":          s.StealthDelayMax,
+		"OutputFormats":            s.OutputFormats,
+		"BountyProgram":            s.BountyProgram,
+		"NotificationLevel":        s.NotificationLevel,
 	}
 	ret := make([]string, 0)
 	for k, v := range p {
@@ -138,6 +267,9 @@ func NewDefaultScanOptions() *ScanOptions {
 		WildcardDetection:   true,
 		ProgressBar:         false,
 		FilterAPIs:          make(map[string]interface{}),
+		OutputDirectory:     "./results",
+		RiskThreshold:       "medium",
+		NotificationLevel:   "high",
 	}
 }
 
@@ -306,9 +438,9 @@ func LoadTextWordlist(fns []string, extensions []string, dirsearchCompatabilityM
 
 				// do all the extensions
 				for _, ext := range extensions {
-					path := []byte( v )
+					path := []byte(v)
 					if dirsearchCompatabilityMode {
-						path = bytes.Replace(path, []byte("%EXT%"), []byte( ext ), -1)
+						path = bytes.Replace(path, []byte("%EXT%"), []byte(ext), -1)
 					} else {
 						path = append(path, "."...)
 						path = append(path, ext...)
@@ -365,12 +497,12 @@ func LoadAssetnoteWordlist(fns []string, extensions []string, dirsearchCompatabi
 				if vv[0] != '/' {
 					vv = "/" + vv
 				}
-				o.Routes = append(o.Routes, &http.Route{Method: http.GET, Path: []byte( vv )})
+				o.Routes = append(o.Routes, &http.Route{Method: http.GET, Path: []byte(vv)})
 
 				for _, ext := range extensions {
-					path := []byte( vv )
+					path := []byte(vv)
 					if dirsearchCompatabilityMode {
-						path = bytes.Replace(path, []byte("%EXT%"), []byte( ext ), -1)
+						path = bytes.Replace(path, []byte("%EXT%"), []byte(ext), -1)
 					} else {
 						path = append(path, "."...)
 						path = append(path, ext...)
@@ -596,6 +728,332 @@ func QuarantineThreshold(n int64) ScanOption {
 func PreflightDepth(n int64) ScanOption {
 	return func(o *ScanOptions) error {
 		o.PreflightDepth = n
+		return nil
+	}
+}
+
+// New AI-powered option functions
+func EnableParameterDiscovery(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.ParameterDiscovery = v
+		return nil
+	}
+}
+
+func EnableVulnerabilityDetection(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.VulnerabilityDetection = v
+		return nil
+	}
+}
+
+func EnableResponseIntelligence(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.ResponseIntelligence = v
+		return nil
+	}
+}
+
+func EnableSmartWordlistGeneration(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.SmartWordlistGeneration = v
+		return nil
+	}
+}
+
+func EnableAllAIFeatures(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.AllAIFeatures = v
+		if v {
+			o.ParameterDiscovery = true
+			o.VulnerabilityDetection = true
+			o.ResponseIntelligence = true
+			o.SmartWordlistGeneration = true
+		}
+		return nil
+	}
+}
+
+// Phase 2 option functions
+func EnableMultiMethodDiscovery(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.MultiMethodDiscovery = v
+		return nil
+	}
+}
+
+func EnableHeaderBasedDiscovery(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.HeaderBasedDiscovery = v
+		return nil
+	}
+}
+
+func EnableEncodingBypass(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.EncodingBypass = v
+		return nil
+	}
+}
+
+func EnableAllPhase2Features(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.AllPhase2Features = v
+		if v {
+			o.MultiMethodDiscovery = true
+			o.HeaderBasedDiscovery = true
+			o.EncodingBypass = true
+		}
+		return nil
+	}
+}
+
+// Phase 4 option functions
+func EnableRiskScoring(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.RiskScoring = v
+		return nil
+	}
+}
+
+func EnableNotifications(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.Notifications = v
+		return nil
+	}
+}
+
+func EnableAdvancedOutput(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.AdvancedOutput = v
+		return nil
+	}
+}
+
+func EnableAllPhase4Features(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.AllPhase4Features = v
+		if v {
+			o.RiskScoring = true
+			o.Notifications = true
+			o.AdvancedOutput = true
+		}
+		return nil
+	}
+}
+
+// Phase 5: Stealth and Performance option functions
+func EnableStealth(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.EnableStealth = v
+		return nil
+	}
+}
+
+func SetStealthMode(mode string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.StealthMode = mode
+		return nil
+	}
+}
+
+func SetPerformanceMode(mode string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.PerformanceMode = mode
+		return nil
+	}
+}
+
+func EnableAdaptiveConcurrency(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.AdaptiveConcurrency = v
+		return nil
+	}
+}
+
+func SetTargetResponseTime(duration time.Duration) ScanOption {
+	return func(o *ScanOptions) error {
+		o.TargetResponseTime = duration
+		return nil
+	}
+}
+
+func EnableCache(v bool) ScanOption {
+	return func(o *ScanOptions) error {
+		o.EnableCache = v
+		return nil
+	}
+}
+
+func SetMaxCacheSize(size int) ScanOption {
+	return func(o *ScanOptions) error {
+		o.MaxCacheSize = size
+		return nil
+	}
+}
+
+func SetMaxMemoryUsage(memory int) ScanOption {
+	return func(o *ScanOptions) error {
+		o.MaxMemoryUsage = memory
+		return nil
+	}
+}
+
+func SetStealthProxy(proxy string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.StealthProxy = proxy
+		return nil
+	}
+}
+
+func SetStealthUserAgents(agents []string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.StealthUserAgents = agents
+		return nil
+	}
+}
+
+func SetStealthDelayMin(min int) ScanOption {
+	return func(o *ScanOptions) error {
+		o.StealthDelayMin = min
+		return nil
+	}
+}
+
+func SetStealthDelayMax(max int) ScanOption {
+	return func(o *ScanOptions) error {
+		o.StealthDelayMax = max
+		return nil
+	}
+}
+
+func SetStealthDelay(min, max int) ScanOption {
+	return func(o *ScanOptions) error {
+		o.StealthDelayMin = min
+		o.StealthDelayMax = max
+		return nil
+	}
+}
+
+// Output configuration functions
+func SetOutputFormats(formats []string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.OutputFormats = formats
+		return nil
+	}
+}
+
+func SetOutputDirectory(dir string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.OutputDirectory = dir
+		return nil
+	}
+}
+
+func SetBurpProjectOutput(filename string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.BurpProjectOutput = filename
+		return nil
+	}
+}
+
+func SetNucleiTemplateOutput(filename string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.NucleiTemplateOutput = filename
+		return nil
+	}
+}
+
+func SetMarkdownReportOutput(filename string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.MarkdownReportOutput = filename
+		return nil
+	}
+}
+
+func SetHTMLReportOutput(filename string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.HTMLReportOutput = filename
+		return nil
+	}
+}
+
+func SetSARIFOutput(filename string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.SARIFOutput = filename
+		return nil
+	}
+}
+
+// Risk scoring configuration functions
+func SetRiskThreshold(threshold string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.RiskThreshold = threshold
+		return nil
+	}
+}
+
+// Notification configuration functions
+func SetNotificationConfig(config string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.NotificationConfig = config
+		return nil
+	}
+}
+
+func SetSlackWebhook(webhook string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.SlackWebhook = webhook
+		return nil
+	}
+}
+
+func SetDiscordWebhook(webhook string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.DiscordWebhook = webhook
+		return nil
+	}
+}
+
+func SetEmailConfig(config string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.EmailConfig = config
+		return nil
+	}
+}
+
+func SetWebhookURL(url string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.WebhookURL = url
+		return nil
+	}
+}
+
+func SetNotificationLevel(level string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.NotificationLevel = level
+		return nil
+	}
+}
+
+// Bug bounty context configuration functions
+func SetBountyProgram(program string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.BountyProgram = program
+		return nil
+	}
+}
+
+func SetBountyPlatform(platform string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.BountyPlatform = platform
+		return nil
+	}
+}
+
+func SetResearcher(researcher string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.Researcher = researcher
 		return nil
 	}
 }

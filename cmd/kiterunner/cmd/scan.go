@@ -43,6 +43,60 @@ var (
 	profileName = ""
 
 	assetnoteWordlist = []string{}
+
+	// New AI-powered features
+	enableParameterDiscovery      = false
+	enableVulnerabilityDetection  = false
+	enableResponseIntelligence    = false
+	enableSmartWordlistGeneration = false
+	enableAllAIFeatures           = false
+
+	// Phase 2: Advanced Discovery Features
+	enableMultiMethodDiscovery = false
+	enableHeaderBasedDiscovery = false
+	enableEncodingBypass       = false
+	enableAllPhase2Features    = false
+
+	// Phase 4: Intelligence & Reporting Features
+	enableRiskScoring       = false
+	enableNotifications     = false
+	enableAdvancedOutput    = false
+	enableAllPhase4Features = false
+	outputFormats           = []string{}
+	outputDirectory         = "./results"
+	notificationConfig      = ""
+	burpProjectOutput       = ""
+	nucleiTemplateOutput    = ""
+	markdownReportOutput    = ""
+	htmlReportOutput        = ""
+	sarif_output            = ""
+
+	// Risk scoring options
+	riskThreshold = "medium"
+
+	// Notification options
+	slackWebhook      = ""
+	discordWebhook    = ""
+	emailConfig       = ""
+	webhookURL        = ""
+	notificationLevel = "high"
+	bountyProgram     = ""
+	bountyPlatform    = ""
+	researcher        = ""
+
+	// Phase 5: Stealth and Performance Features
+	enableStealth       = false
+	stealthMode         = ""
+	performanceMode     = ""
+	adaptiveConcurrency = false
+	targetResponseTime  = 500 * time.Millisecond
+	enableCache         = false
+	maxCacheSize        = 100
+	maxMemoryUsage      = 500
+	stealthProxy        = ""
+	stealthUserAgents   = []string{}
+	stealthDelayMin     = 50
+	stealthDelayMax     = 200
 )
 
 // scanCmd represents the scan command
@@ -96,6 +150,49 @@ kr scan domains.txt -W rafter.txt -D=0 # this just uses the words as a normal wo
 			scan.QuarantineThreshold(quarantineThreshold),
 			scan.PreflightDepth(preflightDepth),
 			scan.Precheck(!disablePrecheck),
+			scan.EnableParameterDiscovery(enableParameterDiscovery),
+			scan.EnableVulnerabilityDetection(enableVulnerabilityDetection),
+			scan.EnableResponseIntelligence(enableResponseIntelligence),
+			scan.EnableSmartWordlistGeneration(enableSmartWordlistGeneration),
+			scan.EnableAllAIFeatures(enableAllAIFeatures),
+			scan.EnableMultiMethodDiscovery(enableMultiMethodDiscovery),
+			scan.EnableHeaderBasedDiscovery(enableHeaderBasedDiscovery),
+			scan.EnableEncodingBypass(enableEncodingBypass),
+			scan.EnableAllPhase2Features(enableAllPhase2Features),
+			scan.EnableRiskScoring(enableRiskScoring),
+			scan.EnableNotifications(enableNotifications),
+			scan.EnableAdvancedOutput(enableAdvancedOutput),
+			scan.EnableAllPhase4Features(enableAllPhase4Features),
+			scan.SetOutputFormats(outputFormats),
+			scan.SetOutputDirectory(outputDirectory),
+			scan.SetBurpProjectOutput(burpProjectOutput),
+			scan.SetNucleiTemplateOutput(nucleiTemplateOutput),
+			scan.SetMarkdownReportOutput(markdownReportOutput),
+			scan.SetHTMLReportOutput(htmlReportOutput),
+			scan.SetSARIFOutput(sarif_output),
+			scan.SetRiskThreshold(riskThreshold),
+			scan.SetNotificationConfig(notificationConfig),
+			scan.SetSlackWebhook(slackWebhook),
+			scan.SetDiscordWebhook(discordWebhook),
+			scan.SetEmailConfig(emailConfig),
+			scan.SetWebhookURL(webhookURL),
+			scan.SetNotificationLevel(notificationLevel),
+			scan.SetBountyProgram(bountyProgram),
+			scan.SetBountyPlatform(bountyPlatform),
+			scan.SetResearcher(researcher),
+
+			// Phase 5: Stealth and Performance options
+			scan.EnableStealth(enableStealth),
+			scan.SetStealthMode(stealthMode),
+			scan.SetPerformanceMode(performanceMode),
+			scan.EnableAdaptiveConcurrency(adaptiveConcurrency),
+			scan.SetTargetResponseTime(targetResponseTime),
+			scan.EnableCache(enableCache),
+			scan.SetMaxCacheSize(maxCacheSize),
+			scan.SetMaxMemoryUsage(maxMemoryUsage),
+			scan.SetStealthProxy(stealthProxy),
+			scan.SetStealthUserAgents(stealthUserAgents),
+			scan.SetStealthDelay(stealthDelayMin, stealthDelayMax),
 		}
 
 		go func() {
@@ -159,4 +256,60 @@ func init() {
 	scanCmd.Flags().StringSliceVar(&filterAPIs, "filter-api", filterAPIs, "only scan apis matching this ksuid")
 
 	scanCmd.Flags().StringSliceVarP(&assetnoteWordlist, "assetnote-wordlist", "A", assetnoteWordlist, "use the wordlists from wordlist.assetnote.io. specify the type/name to use, e.g. apiroutes-210228. You can specify an additional maxlength to use only the first N values in the wordlist, e.g. apiroutes-210228;20000 will only use the first 20000 lines in that wordlist")
+
+	scanCmd.Flags().BoolVar(&enableParameterDiscovery, "enable-parameter-discovery", enableParameterDiscovery, "enable AI-powered parameter discovery feature")
+	scanCmd.Flags().BoolVar(&enableVulnerabilityDetection, "enable-vulnerability-detection", enableVulnerabilityDetection, "enable AI-powered vulnerability detection feature")
+	scanCmd.Flags().BoolVar(&enableResponseIntelligence, "enable-response-intelligence", enableResponseIntelligence, "enable AI-powered response intelligence feature")
+	scanCmd.Flags().BoolVar(&enableSmartWordlistGeneration, "enable-smart-wordlist-generation", enableSmartWordlistGeneration, "enable AI-powered smart wordlist generation feature")
+	scanCmd.Flags().BoolVar(&enableAllAIFeatures, "enable-all-ai-features", enableAllAIFeatures, "enable all AI-powered features")
+
+	scanCmd.Flags().BoolVar(&enableMultiMethodDiscovery, "enable-multi-method-discovery", enableMultiMethodDiscovery, "enable multi-method discovery for advanced endpoint discovery")
+	scanCmd.Flags().BoolVar(&enableHeaderBasedDiscovery, "enable-header-based-discovery", enableHeaderBasedDiscovery, "enable header-based discovery for advanced endpoint discovery")
+	scanCmd.Flags().BoolVar(&enableEncodingBypass, "enable-encoding-bypass", enableEncodingBypass, "enable encoding bypass techniques for advanced endpoint discovery")
+	scanCmd.Flags().BoolVar(&enableAllPhase2Features, "enable-all-phase2-features", enableAllPhase2Features, "enable all Phase 2 advanced discovery features")
+
+	// Phase 4: Intelligence & Reporting flags
+	scanCmd.Flags().BoolVar(&enableRiskScoring, "enable-risk-scoring", enableRiskScoring, "enable intelligent risk scoring of discovered endpoints")
+	scanCmd.Flags().BoolVar(&enableNotifications, "enable-notifications", enableNotifications, "enable real-time notifications for high-value findings")
+	scanCmd.Flags().BoolVar(&enableAdvancedOutput, "enable-advanced-output", enableAdvancedOutput, "enable advanced output formats (Burp, Nuclei, SARIF)")
+	scanCmd.Flags().BoolVar(&enableAllPhase4Features, "enable-all-phase4-features", enableAllPhase4Features, "enable all Phase 4 Intelligence & Reporting features")
+
+	// Output format options
+	scanCmd.Flags().StringSliceVar(&outputFormats, "output-formats", outputFormats, "output formats (json,xml,burp,nuclei,markdown,html,csv,sarif)")
+	scanCmd.Flags().StringVar(&outputDirectory, "output-dir", outputDirectory, "directory for output files")
+	scanCmd.Flags().StringVar(&burpProjectOutput, "burp-output", burpProjectOutput, "export findings as Burp Suite project file")
+	scanCmd.Flags().StringVar(&nucleiTemplateOutput, "nuclei-output", nucleiTemplateOutput, "generate Nuclei templates for high-risk findings")
+	scanCmd.Flags().StringVar(&markdownReportOutput, "markdown-report", markdownReportOutput, "generate markdown bug bounty report")
+	scanCmd.Flags().StringVar(&htmlReportOutput, "html-report", htmlReportOutput, "generate HTML vulnerability report")
+	scanCmd.Flags().StringVar(&sarif_output, "sarif-output", sarif_output, "export results in SARIF format for CI/CD integration")
+
+	// Risk scoring options
+	scanCmd.Flags().StringVar(&riskThreshold, "risk-threshold", riskThreshold, "minimum risk level to report (low,medium,high,critical)")
+
+	// Notification options
+	scanCmd.Flags().StringVar(&notificationConfig, "notification-config", notificationConfig, "JSON config file for notifications")
+	scanCmd.Flags().StringVar(&slackWebhook, "slack-webhook", slackWebhook, "Slack webhook URL for real-time alerts")
+	scanCmd.Flags().StringVar(&discordWebhook, "discord-webhook", discordWebhook, "Discord webhook URL for real-time alerts")
+	scanCmd.Flags().StringVar(&emailConfig, "email-config", emailConfig, "email configuration for alerts (smtp_host:port:username:password:from:to)")
+	scanCmd.Flags().StringVar(&webhookURL, "webhook-url", webhookURL, "generic webhook URL for custom integrations")
+	scanCmd.Flags().StringVar(&notificationLevel, "notification-level", notificationLevel, "notification threshold (all,medium,high,critical)")
+
+	// Bug bounty context
+	scanCmd.Flags().StringVar(&bountyProgram, "bounty-program", bountyProgram, "bug bounty program name for reports")
+	scanCmd.Flags().StringVar(&bountyPlatform, "bounty-platform", bountyPlatform, "bug bounty platform (hackerone,bugcrowd,etc)")
+	scanCmd.Flags().StringVar(&researcher, "researcher", researcher, "researcher name for bug bounty submissions")
+
+	// Phase 5: Stealth and Performance Features
+	scanCmd.Flags().BoolVar(&enableStealth, "enable-stealth", enableStealth, "enable stealth mode for evasion")
+	scanCmd.Flags().StringVar(&stealthMode, "stealth-mode", stealthMode, "stealth preset: ghost (max stealth), ninja (balanced), fast (minimal)")
+	scanCmd.Flags().StringVar(&performanceMode, "performance-mode", performanceMode, "performance preset: aggressive, balanced, conservative")
+	scanCmd.Flags().BoolVar(&adaptiveConcurrency, "adaptive-concurrency", adaptiveConcurrency, "enable adaptive concurrency based on target response")
+	scanCmd.Flags().DurationVar(&targetResponseTime, "target-response-time", targetResponseTime, "target response time for adaptive concurrency")
+	scanCmd.Flags().BoolVar(&enableCache, "enable-cache", enableCache, "enable smart response caching")
+	scanCmd.Flags().IntVar(&maxCacheSize, "max-cache-size", maxCacheSize, "maximum cache size in MB")
+	scanCmd.Flags().IntVar(&maxMemoryUsage, "max-memory", maxMemoryUsage, "maximum memory usage in MB")
+	scanCmd.Flags().StringVar(&stealthProxy, "stealth-proxy", stealthProxy, "proxy URL for stealth requests (http/https/socks5)")
+	scanCmd.Flags().StringSliceVar(&stealthUserAgents, "stealth-user-agents", stealthUserAgents, "custom user agents for stealth mode")
+	scanCmd.Flags().IntVar(&stealthDelayMin, "stealth-delay-min", stealthDelayMin, "minimum delay between requests in ms")
+	scanCmd.Flags().IntVar(&stealthDelayMax, "stealth-delay-max", stealthDelayMax, "maximum delay between requests in ms")
 }

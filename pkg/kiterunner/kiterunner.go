@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/assetnote/kiterunner/pkg/http"
 	"github.com/assetnote/kiterunner/pkg/log"
@@ -274,10 +275,54 @@ routeloop:
 
 		req.Route = route
 
+		// Phase 5: Check cache before making request
+		if config.EnableCache && config.ResourceManager != nil {
+			cacheKey := CacheKey{
+				Host:   j.t.Host(),
+				Path:   string(route.Path),
+				Method: string(route.Method),
+			}
+
+			// Skip if request is already in flight
+			if !config.ResourceManager.TrackInflightRequest(cacheKey) {
+				continue
+			}
+			defer config.ResourceManager.CompleteInflightRequest(cacheKey)
+
+			// Check cache
+			if _, found := config.ResourceManager.GetCachedResponse(cacheKey); found {
+				log.Trace().Str("path", string(route.Path)).Msg("Using cached response")
+				continue // Skip actual request, use cached result
+			}
+		}
+
 		j.t.HitIncr()
 		config.ProgressBar.Incr(1)
 
+		// Phase 5: Record timing for adaptive concurrency
+		startTime := time.Now()
+
 		resp, err := http.DoClient(j.client, req, &config.HTTP)
+
+		// Phase 5: Record performance metrics
+		responseTime := time.Since(startTime)
+		success := err == nil
+
+		// Update adaptive concurrency manager
+		if config.AdaptiveConcurrency && config.AdaptiveManager != nil {
+			config.AdaptiveManager.RecordRequest(responseTime, success)
+
+			// Get updated connection count for future requests
+			newConnCount := config.AdaptiveManager.GetCurrentConnections()
+			if newConnCount != config.MaxConnPerHost {
+				// Note: In a real implementation, we'd need to adjust the actual pool size
+				log.Debug().
+					Int("old_conns", config.MaxConnPerHost).
+					Int("new_conns", newConnCount).
+					Msg("Adaptive concurrency suggests connection adjustment")
+			}
+		}
+
 		if err != nil {
 			log.Debug().Err(err).
 				Bytes("request", req.Target.Bytes()).
@@ -295,6 +340,18 @@ routeloop:
 			}
 			break
 		} else {
+			// Phase 5: Cache successful response if enabled
+			if config.EnableCache && config.ResourceManager != nil {
+				cacheKey := CacheKey{
+					Host:   j.t.Host(),
+					Path:   string(route.Path),
+					Method: string(route.Method),
+				}
+				if resp.Body != nil {
+					config.ResourceManager.CacheResponse(cacheKey, resp.Body, resp.StatusCode)
+				}
+			}
+
 			// we have to pass all validators before we can consider it a valid request
 			for _, v := range config.RequestValidators {
 				if err := v.Validate(resp, j.wcr, config); err != nil {

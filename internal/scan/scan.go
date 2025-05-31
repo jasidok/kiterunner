@@ -9,12 +9,90 @@ import (
 	"time"
 
 	"github.com/assetnote/kiterunner/pkg/convert"
+	"github.com/assetnote/kiterunner/pkg/encoding"
 	"github.com/assetnote/kiterunner/pkg/http"
 	"github.com/assetnote/kiterunner/pkg/kiterunner"
 	"github.com/assetnote/kiterunner/pkg/log"
 	"github.com/manifoldco/promptui"
 	"github.com/olekukonko/tablewriter"
 )
+
+// enhanceRoutesWithPhase2Features applies Phase 2 discovery techniques to routes
+func enhanceRoutesWithPhase2Features(routes []*http.Route, opts *ScanOptions) []*http.Route {
+	if !opts.MultiMethodDiscovery && !opts.HeaderBasedDiscovery && !opts.EncodingBypass && !opts.AllPhase2Features {
+		return routes // No enhancement needed
+	}
+
+	var enhancedRoutes []*http.Route
+
+	// Initialize Phase 2 modules
+	var methodEnum *http.MethodEnumerator
+	var headerDiscovery *http.HeaderDiscovery
+	var encodingBypass *encoding.EncodingBypass
+
+	if opts.MultiMethodDiscovery || opts.AllPhase2Features {
+		methodEnum = http.NewMethodEnumerator()
+	}
+
+	if opts.HeaderBasedDiscovery || opts.AllPhase2Features {
+		headerDiscovery = http.NewHeaderDiscovery()
+	}
+
+	if opts.EncodingBypass || opts.AllPhase2Features {
+		encodingBypass = encoding.NewEncodingBypass()
+	}
+
+	for _, baseRoute := range routes {
+		routeVariations := []*http.Route{baseRoute}
+
+		// Apply multi-method discovery
+		if methodEnum != nil {
+			var methodVariations []*http.Route
+			for _, route := range routeVariations {
+				methodVariations = append(methodVariations, methodEnum.GenerateMethodVariations(route)...)
+			}
+			routeVariations = methodVariations
+		}
+
+		// Apply header-based discovery
+		if headerDiscovery != nil {
+			var headerVariations []*http.Route
+			for _, route := range routeVariations {
+				headerVariations = append(headerVariations, route) // Keep original
+				headerVariations = append(headerVariations, headerDiscovery.GenerateHeaderVariations(route)...)
+				headerVariations = append(headerVariations, headerDiscovery.GenerateHeaderCombinations(route)...)
+			}
+			routeVariations = headerVariations
+		}
+
+		// Apply encoding bypass techniques
+		if encodingBypass != nil {
+			var encodingVariations []*http.Route
+			for _, route := range routeVariations {
+				pathVariations := encodingBypass.GeneratePathVariations(string(route.Path))
+				for _, pathVar := range pathVariations {
+					newRoute := *route
+					newRoute.Path = []byte(pathVar)
+					newRoute.Source = route.Source + "-encoding-bypass"
+					encodingVariations = append(encodingVariations, &newRoute)
+				}
+			}
+			routeVariations = encodingVariations
+		}
+
+		enhancedRoutes = append(enhancedRoutes, routeVariations...)
+	}
+
+	log.Info().
+		Int("original-routes", len(routes)).
+		Int("enhanced-routes", len(enhancedRoutes)).
+		Bool("multi-method", opts.MultiMethodDiscovery || opts.AllPhase2Features).
+		Bool("header-discovery", opts.HeaderBasedDiscovery || opts.AllPhase2Features).
+		Bool("encoding-bypass", opts.EncodingBypass || opts.AllPhase2Features).
+		Msg("Phase 2 route enhancement complete")
+
+	return enhancedRoutes
+}
 
 func runWithProgress(ctx context.Context, pbEnabled bool, routes http.RouteMap, targets []*http.Target, wcopts []kiterunner.ConfigOption) ([]*kiterunner.Result, error) {
 	select {
@@ -66,6 +144,10 @@ func ScanDomainOrFile(ctx context.Context, domainOrFile string, opts ...ScanOpti
 
 	// only scan what we want to scan
 	routeSlice := s.FilteredRoutes()
+
+	// Apply Phase 2 enhancements if enabled
+	routeSlice = enhanceRoutesWithPhase2Features(routeSlice, s)
+
 	log.Debug().Int("routes", len(routeSlice)).Msg("loaded routes")
 	wcopts := s.KiterunnerOptions()
 	routes := http.GroupRouteDepth(routeSlice, s.PreflightDepth)

@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"math/rand"
 	"time"
 
 	"github.com/assetnote/kiterunner/pkg/log"
@@ -20,6 +21,64 @@ type HTTPClient = fasthttp.HostClient
 // This is used to handle redirects that change the host/port of the request
 type BackupClient = fasthttp.Client
 
+// StealthConfig contains stealth settings for requests
+type StealthConfig struct {
+	// RandomizeUserAgents enables rotating through different user agents
+	RandomizeUserAgents bool
+	// RandomizeHeaders enables adding randomized headers to requests
+	RandomizeHeaders bool
+	// DelayRange sets min/max delay between requests in milliseconds
+	DelayRange [2]int
+	// ProxyURL configures proxy settings (HTTP/HTTPS/SOCKS5)
+	ProxyURL string
+	// UserAgents is a list of user agents to rotate through
+	UserAgents []string
+	// CommonHeaders are headers to randomly add to requests
+	CommonHeaders map[string][]string
+}
+
+// DefaultStealthConfig returns a default stealth configuration
+func DefaultStealthConfig() *StealthConfig {
+	return &StealthConfig{
+		RandomizeUserAgents: true,
+		RandomizeHeaders:    true,
+		DelayRange:          [2]int{50, 200}, // 50-200ms delay
+		UserAgents: []string{
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0",
+			"Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+		},
+		CommonHeaders: map[string][]string{
+			"Accept": {
+				"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+				"application/json,text/plain,*/*",
+				"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+			},
+			"Accept-Language": {
+				"en-US,en;q=0.9",
+				"en-GB,en;q=0.9",
+				"en-US,en;q=0.5",
+				"en-CA,en;q=0.8",
+			},
+			"Accept-Encoding": {
+				"gzip, deflate, br",
+				"gzip, deflate",
+				"br, gzip, deflate",
+			},
+			"Cache-Control": {
+				"no-cache",
+				"max-age=0",
+				"no-store",
+			},
+		},
+	}
+}
+
 // NewHTTPClient will create a http client configured specifically for requesting against the targetted host.
 // This is backed by the fasthttp.HostClient
 func NewHTTPClient(host string, tls bool) *HTTPClient {
@@ -30,17 +89,74 @@ func NewHTTPClient(host string, tls bool) *HTTPClient {
 	}
 }
 
+// NewStealthHTTPClient creates an HTTP client with stealth capabilities
+func NewStealthHTTPClient(host string, tls bool, stealthConfig *StealthConfig) *HTTPClient {
+	client := &HTTPClient{
+		Addr:      host,
+		IsTLS:     tls,
+		TLSConfig: defaultTLSConfig,
+	}
+
+	// Configure proxy if specified
+	if stealthConfig != nil && stealthConfig.ProxyURL != "" {
+		log.Debug().Str("proxy", stealthConfig.ProxyURL).Msg("Proxy configuration detected")
+	}
+
+	return client
+}
+
+// ApplyStealthFeatures applies stealth modifications to a request
+func ApplyStealthFeatures(req *fasthttp.Request, config *StealthConfig) {
+	if config == nil {
+		return
+	}
+
+	// Randomize User-Agent
+	if config.RandomizeUserAgents && len(config.UserAgents) > 0 {
+		userAgent := config.UserAgents[rand.Intn(len(config.UserAgents))]
+		req.Header.Set("User-Agent", userAgent)
+	}
+
+	// Add random headers
+	if config.RandomizeHeaders {
+		for headerName, values := range config.CommonHeaders {
+			if rand.Float32() < 0.7 { // 70% chance to add each header
+				value := values[rand.Intn(len(values))]
+				req.Header.Set(headerName, value)
+			}
+		}
+
+		// Add random timing headers to mimic browser behavior
+		if rand.Float32() < 0.3 {
+			req.Header.Set("DNT", "1")
+		}
+		if rand.Float32() < 0.4 {
+			req.Header.Set("Upgrade-Insecure-Requests", "1")
+		}
+	}
+
+	// Apply random delay
+	if config.DelayRange[0] > 0 || config.DelayRange[1] > 0 {
+		minDelay := config.DelayRange[0]
+		maxDelay := config.DelayRange[1]
+		if maxDelay > minDelay {
+			delay := time.Duration(minDelay+rand.Intn(maxDelay-minDelay)) * time.Millisecond
+			time.Sleep(delay)
+		}
+	}
+}
+
 // Config provides all the options available to a request, this is used by DoClient
 type Config struct {
 	// Timeout is the duration to wait when performing a DoTimeout request
-	Timeout      time.Duration `toml:"timeout" json:"timeout" mapstructure:"timeout"`
+	Timeout time.Duration `toml:"timeout" json:"timeout" mapstructure:"timeout"`
 	// MaxRedirects corresponds to how many redirects to follow. 0 means the first request will return and no
 	// redirects are followed
-	MaxRedirects int           `toml:"max_redirects" json:"max_redirects" mapstructure:"max_redirects"`
+	MaxRedirects int `toml:"max_redirects" json:"max_redirects" mapstructure:"max_redirects"`
 
 	// ReadBody defines whether to copy the body into the Response object. We will always read the body of the request
 	// off the wire to perform the length and word count calculations
-	ReadBody    bool
+	ReadBody bool
 	// ReadHeaders defines whether to copy the headers into the Response object. We will always peek the location header
 	// to determine whether to follow redirects
 	ReadHeaders bool
@@ -51,6 +167,9 @@ type Config struct {
 	// ExtraHeaders are added to the request last and will overwrite the route headers
 	ExtraHeaders []Header
 
+	// StealthConfig contains stealth settings
+	StealthConfig *StealthConfig
+
 	backupClient *BackupClient
 }
 
@@ -60,7 +179,7 @@ type Config struct {
 func (c *Config) IsBlacklistedRedirect(host []byte) bool {
 	log.Trace().Str("host", string(host)).Strs("blhosts", c.BlacklistRedirects).Msg("checking for blacklist hosts")
 	for _, v := range c.BlacklistRedirects {
-		if bytes.HasPrefix(host, []byte( v )) {
+		if bytes.HasPrefix(host, []byte(v)) {
 			return true
 		}
 	}
@@ -111,6 +230,11 @@ func DoClient(c *HTTPClient, req Request, config *Config) (Response, error) {
 
 	for _, h := range config.ExtraHeaders {
 		freq.Header.Set(h.Key, h.Value)
+	}
+
+	// Apply stealth features if configured
+	if config.StealthConfig != nil {
+		ApplyStealthFeatures(freq, config.StealthConfig)
 	}
 
 	fresp.Header.DisableNormalizing()

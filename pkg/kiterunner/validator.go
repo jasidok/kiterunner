@@ -2,25 +2,350 @@ package kiterunner
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 
+	"github.com/assetnote/kiterunner/pkg/auth"
 	"github.com/assetnote/kiterunner/pkg/convert"
-	"github.com/assetnote/kiterunner/pkg/http"
+	httppkg "github.com/assetnote/kiterunner/pkg/http"
+	"github.com/assetnote/kiterunner/pkg/injection"
 	"github.com/assetnote/kiterunner/pkg/log"
 )
 
 // RequestValidator is an interface that lets you add custom validators for what are good and bad responses
 type RequestValidator interface {
-	Validate(r http.Response, wildcardResponses []WildcardResponse, c *Config) error
+	Validate(r httppkg.Response, wildcardResponses []WildcardResponse, c *Config) error
+}
+
+// SecurityTestingValidator performs comprehensive security testing on discovered endpoints
+type SecurityTestingValidator struct {
+	AuthTester      *auth.AuthTester
+	BusinessTester  *auth.BusinessLogicTester
+	InjectionTester *injection.InjectionTester
+	Config          SecurityTestingConfig
+	HTTPClient      *http.Client
+}
+
+// SecurityTestingConfig holds configuration for security testing
+type SecurityTestingConfig struct {
+	EnableAuthTesting    bool
+	EnableBusinessLogic  bool
+	EnableInjectionTests bool
+	JWTToken             string
+	APIKey               string
+	AdminToken           string
+	TestUserIDs          []string
+	AdminEndpoints       []string
+	TestParameters       []string
+}
+
+// NewSecurityTestingValidator creates a new security testing validator
+func NewSecurityTestingValidator(config SecurityTestingConfig, client *http.Client) *SecurityTestingValidator {
+	if client == nil {
+		client = &http.Client{}
+	}
+
+	return &SecurityTestingValidator{
+		AuthTester:      auth.NewAuthTester(client),
+		BusinessTester:  auth.NewBusinessLogicTester(client),
+		InjectionTester: injection.NewInjectionTester(client),
+		Config:          config,
+		HTTPClient:      client,
+	}
+}
+
+// Validate performs comprehensive security testing on the response
+func (v *SecurityTestingValidator) Validate(r httppkg.Response, wildcardResponses []WildcardResponse, c *Config) error {
+	if v == nil {
+		return nil
+	}
+
+	// Only test successful responses to avoid false positives
+	if r.StatusCode < 200 || r.StatusCode >= 300 {
+		return nil
+	}
+
+	// Construct endpoint URL from Target and Route
+	endpoint := v.constructEndpointURL(r.OriginRequest)
+	method := string(r.OriginRequest.Route.Method)
+
+	// Perform authentication testing
+	if v.Config.EnableAuthTesting && v.Config.JWTToken != "" {
+		v.performAuthenticationTesting(endpoint, method)
+	}
+
+	// Perform business logic testing
+	if v.Config.EnableBusinessLogic {
+		v.performBusinessLogicTesting(endpoint, method)
+	}
+
+	// Perform injection testing
+	if v.Config.EnableInjectionTests {
+		v.performInjectionTesting(endpoint, method)
+	}
+
+	return nil
+}
+
+// constructEndpointURL constructs the full endpoint URL from the request
+func (v *SecurityTestingValidator) constructEndpointURL(req httppkg.Request) string {
+	if req.Target == nil || req.Route == nil {
+		return ""
+	}
+
+	var endpoint strings.Builder
+
+	// Add scheme
+	if req.Target.IsTLS {
+		endpoint.WriteString("https://")
+	} else {
+		endpoint.WriteString("http://")
+	}
+
+	// Add host with port
+	endpoint.WriteString(req.Target.Host())
+
+	// Add base path
+	endpoint.WriteString(req.Target.BasePath)
+
+	// Add route path
+	endpoint.Write(req.Route.Path)
+
+	// Add query if present
+	if len(req.Route.Query) > 0 {
+		endpoint.WriteString("?")
+		endpoint.Write(req.Route.Query)
+	}
+
+	return endpoint.String()
+}
+
+// performAuthenticationTesting performs comprehensive authentication tests
+func (v *SecurityTestingValidator) performAuthenticationTesting(endpoint, method string) {
+	if v.Config.JWTToken != "" {
+		// JWT Testing
+		jwtConfig := auth.JWTTestConfig{
+			Token:           v.Config.JWTToken,
+			SecretWordlist:  auth.GetDefaultJWTSecretWordlist(),
+			AlgorithmTests:  true,
+			ExpirationTests: true,
+		}
+
+		results := v.AuthTester.TestJWT(jwtConfig, endpoint, method)
+		for _, result := range results {
+			if result.Vulnerable {
+				log.Warn().
+					Str("test_type", result.TestType).
+					Str("endpoint", result.Endpoint).
+					Str("method", result.Method).
+					Str("risk", result.Risk).
+					Str("details", result.Details).
+					Msg("Authentication vulnerability detected")
+			}
+		}
+	}
+
+	if v.Config.APIKey != "" {
+		// API Key Testing
+		apiConfig := auth.APIKeyTestConfig{
+			Key:             v.Config.APIKey,
+			HeaderName:      "X-API-Key",
+			QueryParamName:  "api_key",
+			WeakKeyPatterns: auth.GetDefaultWeakAPIKeyPatterns(),
+		}
+
+		results := v.AuthTester.TestAPIKey(apiConfig, endpoint, method)
+		for _, result := range results {
+			if result.Vulnerable {
+				log.Warn().
+					Str("test_type", result.TestType).
+					Str("endpoint", result.Endpoint).
+					Str("method", result.Method).
+					Str("risk", result.Risk).
+					Str("details", result.Details).
+					Msg("API key vulnerability detected")
+			}
+		}
+	}
+}
+
+// performBusinessLogicTesting performs business logic and access control tests
+func (v *SecurityTestingValidator) performBusinessLogicTesting(endpoint, method string) {
+	if v.Config.JWTToken != "" {
+		// IDOR Testing
+		idorConfig := auth.IDORTestConfig{
+			UserToken:     v.Config.JWTToken,
+			AdminToken:    v.Config.AdminToken,
+			TestUserIDs:   v.getTestUserIDs(),
+			TestObjectIDs: []string{"1", "2", "3", "admin", "test"},
+		}
+
+		results := v.BusinessTester.TestIDOR(idorConfig, endpoint, method)
+		for _, result := range results {
+			if result.Vulnerable {
+				log.Warn().
+					Str("test_type", result.TestType).
+					Str("endpoint", result.Endpoint).
+					Str("method", result.Method).
+					Str("risk", result.Risk).
+					Str("impact", result.Impact).
+					Str("details", result.Details).
+					Msg("IDOR vulnerability detected")
+			}
+		}
+
+		// Privilege Escalation Testing
+		privConfig := auth.PrivilegeEscalationConfig{
+			UserToken:      v.Config.JWTToken,
+			AdminEndpoints: v.getAdminEndpoints(),
+			RoleHeaders:    auth.GetDefaultRoleHeaders(),
+		}
+
+		results = v.BusinessTester.TestPrivilegeEscalation(privConfig, endpoint, method)
+		for _, result := range results {
+			if result.Vulnerable {
+				log.Warn().
+					Str("test_type", result.TestType).
+					Str("endpoint", result.Endpoint).
+					Str("method", result.Method).
+					Str("risk", result.Risk).
+					Str("impact", result.Impact).
+					Str("details", result.Details).
+					Msg("Privilege escalation vulnerability detected")
+			}
+		}
+	}
+
+	// Rate Limiting Testing
+	rateLimitConfig := auth.RateLimitTestConfig{
+		RequestsPerSecond: 10,
+		TotalRequests:     50,
+		BurstTest:         true,
+	}
+
+	results := v.BusinessTester.TestRateLimit(rateLimitConfig, endpoint, method)
+	for _, result := range results {
+		if result.Vulnerable {
+			log.Warn().
+				Str("test_type", result.TestType).
+				Str("endpoint", result.Endpoint).
+				Str("method", result.Method).
+				Str("risk", result.Risk).
+				Str("details", result.Details).
+				Msg("Rate limiting vulnerability detected")
+		}
+	}
+}
+
+// performInjectionTesting performs injection vulnerability tests
+func (v *SecurityTestingValidator) performInjectionTesting(endpoint, method string) {
+	// Only test endpoints that likely accept parameters
+	if !v.hasParameters(endpoint) {
+		return
+	}
+
+	// SQL Injection Testing
+	sqlConfig := injection.GetDefaultSQLInjectionConfig()
+	results := v.InjectionTester.TestSQLInjection(sqlConfig, endpoint, method)
+	for _, result := range results {
+		if result.Vulnerable {
+			log.Warn().
+				Str("test_type", result.TestType).
+				Str("injection_type", result.InjectionType).
+				Str("endpoint", result.Endpoint).
+				Str("method", result.Method).
+				Str("parameter", result.Parameter).
+				Str("risk", result.Risk).
+				Str("details", result.Details).
+				Msg("SQL injection vulnerability detected")
+		}
+	}
+
+	// NoSQL Injection Testing
+	nosqlConfig := injection.GetDefaultNoSQLInjectionConfig()
+	results = v.InjectionTester.TestNoSQLInjection(nosqlConfig, endpoint, method)
+	for _, result := range results {
+		if result.Vulnerable {
+			log.Warn().
+				Str("test_type", result.TestType).
+				Str("injection_type", result.InjectionType).
+				Str("endpoint", result.Endpoint).
+				Str("method", result.Method).
+				Str("parameter", result.Parameter).
+				Str("risk", result.Risk).
+				Str("details", result.Details).
+				Msg("NoSQL injection vulnerability detected")
+		}
+	}
+
+	// Command Injection Testing
+	cmdConfig := injection.GetDefaultCommandInjectionConfig()
+	results = v.InjectionTester.TestCommandInjection(cmdConfig, endpoint, method)
+	for _, result := range results {
+		if result.Vulnerable {
+			log.Warn().
+				Str("test_type", result.TestType).
+				Str("injection_type", result.InjectionType).
+				Str("endpoint", result.Endpoint).
+				Str("method", result.Method).
+				Str("parameter", result.Parameter).
+				Str("risk", result.Risk).
+				Str("details", result.Details).
+				Msg("Command injection vulnerability detected")
+		}
+	}
+}
+
+// Helper methods
+
+func (v *SecurityTestingValidator) getTestUserIDs() []string {
+	if len(v.Config.TestUserIDs) > 0 {
+		return v.Config.TestUserIDs
+	}
+	return auth.GetDefaultIDORTestIDs()
+}
+
+func (v *SecurityTestingValidator) getAdminEndpoints() []string {
+	if len(v.Config.AdminEndpoints) > 0 {
+		return v.Config.AdminEndpoints
+	}
+	return auth.GetDefaultAdminEndpoints()
+}
+
+func (v *SecurityTestingValidator) hasParameters(endpoint string) bool {
+	// Check for query parameters
+	if strings.Contains(endpoint, "?") {
+		return true
+	}
+
+	// Check for path parameters (numeric values)
+	parts := strings.Split(endpoint, "/")
+	for _, part := range parts {
+		if len(part) > 0 && isNumeric(part) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isNumeric(s string) bool {
+	for _, char := range s {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return len(s) > 0
 }
 
 type KnownBadSitesValidator struct{}
 
 var (
-	ErrGoogleBadRequest = fmt.Errorf("google bad request found")
+	ErrGoogleBadRequest        = fmt.Errorf("google bad request found")
 	ErrAmazonGatewayBadRequest = fmt.Errorf("amazon gateway bad request found")
 )
 
-func (v *KnownBadSitesValidator) Validate(r http.Response, wildcardResponses []WildcardResponse, c *Config) error {
+func (v *KnownBadSitesValidator) Validate(r httppkg.Response, wildcardResponses []WildcardResponse, c *Config) error {
 	if v == nil {
 		return nil
 	}
@@ -47,24 +372,8 @@ func (v *KnownBadSitesValidator) Validate(r http.Response, wildcardResponses []W
 		return ErrAmazonGatewayBadRequest
 	}
 
-	// {"message":"Authorization header requires 'Credential' parameter. Authorization header requires 'Signature' parameter. Authorization header requires 'SignedHeaders' parameter. Authorization header requires existence of either a 'X-Amz-Date' or a
-	// 'Date' header. Authorization=29547877"}
-	if r.StatusCode == 403&&
-		r.Lines == 1 &&
-		r.Words == 28 &&
-		r.BodyLength >= 277 {
-		if len(r.Headers) > 0 {
-			for _, v := range r.Headers {
-				if v.Key == "X-Amzn-Requestid" {
-					return ErrAmazonGatewayBadRequest
-				}
-			}
-		}
-		return ErrAmazonGatewayBadRequest
-	}
-
 	// {"message":"'UEh6T0NPYkhOY3JSdGlmNDoxTUZ4WXExREg2bnBVR1Bi' not a valid key=value pair (missing equal-sign) in Authorization header: 'Basic UEh6T0NPYkhOY3JSdGlmNDoxTUZ4WXExREg2bnBVR1Bi'."}
-	if r.StatusCode == 403&&
+	if r.StatusCode == 403 &&
 		r.Lines == 1 &&
 		r.Words == 13 &&
 		r.BodyLength >= 99 {
@@ -78,13 +387,27 @@ func (v *KnownBadSitesValidator) Validate(r http.Response, wildcardResponses []W
 		return ErrAmazonGatewayBadRequest
 	}
 
+	// {"message":"'UEh6T0NPYkhOY3JSdGlmNDoxTUZ4WXExREg2bnBVR1Bi' not a valid key=value pair (missing equal-sign) in Authorization header: 'Basic UEh6T0NPYkhOY3JSdGlmNDoxTUZ4WXExREg2bnBVR1Bi'."}
+	if r.StatusCode == 403 &&
+		r.Lines == 1 &&
+		r.Words == 28 &&
+		r.BodyLength >= 277 {
+		if len(r.Headers) > 0 {
+			for _, v := range r.Headers {
+				if v.Key == "X-Amzn-Requestid" {
+					return ErrAmazonGatewayBadRequest
+				}
+			}
+		}
+		return ErrAmazonGatewayBadRequest
+	}
 
 	return nil
 }
 
 type WildcardResponseValidator struct{}
 
-func (v *WildcardResponseValidator) Validate(r http.Response, wildcardResponses []WildcardResponse, c *Config) error {
+func (v *WildcardResponseValidator) Validate(r httppkg.Response, wildcardResponses []WildcardResponse, c *Config) error {
 	if v == nil {
 		return nil
 	}
@@ -152,10 +475,10 @@ func (v *WildcardResponseValidator) Validate(r http.Response, wildcardResponses 
 }
 
 type ContentLengthValidator struct {
-	IgnoreRanges []http.Range
+	IgnoreRanges []httppkg.Range
 }
 
-func NewContentLengthValidator(ranges []http.Range) *ContentLengthValidator {
+func NewContentLengthValidator(ranges []httppkg.Range) *ContentLengthValidator {
 	if len(ranges) == 0 {
 		return nil
 	}
@@ -168,7 +491,7 @@ func (v ContentLengthValidator) String() string {
 	return fmt.Sprintf("ContentLengthValidator{%v}", v.IgnoreRanges)
 }
 
-func (v *ContentLengthValidator) Validate(r http.Response, _ []WildcardResponse, _ *Config) error {
+func (v *ContentLengthValidator) Validate(r httppkg.Response, _ []WildcardResponse, _ *Config) error {
 	if v == nil {
 		return nil
 	}
@@ -202,7 +525,7 @@ func (v StatusCodeWhitelist) String() string {
 	return fmt.Sprintf("StatusCodeWhitelist{%v}", convert.IntMapToSlice(v.Codes))
 }
 
-func (v *StatusCodeWhitelist) Validate(r http.Response, _ []WildcardResponse, _ *Config) error {
+func (v *StatusCodeWhitelist) Validate(r httppkg.Response, _ []WildcardResponse, _ *Config) error {
 	if v == nil {
 		return nil
 	}
@@ -238,7 +561,7 @@ func (v StatusCodeBlacklist) String() string {
 	return fmt.Sprintf("StatusCodeBlacklist{%v}", convert.IntMapToSlice(v.Codes))
 }
 
-func (v *StatusCodeBlacklist) Validate(r http.Response, _ []WildcardResponse, _ *Config) error {
+func (v *StatusCodeBlacklist) Validate(r httppkg.Response, _ []WildcardResponse, _ *Config) error {
 	if v == nil {
 		return nil
 	}
