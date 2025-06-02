@@ -35,6 +35,12 @@ type StealthConfig struct {
 	UserAgents []string
 	// CommonHeaders are headers to randomly add to requests
 	CommonHeaders map[string][]string
+	// RotateXForwardedFor enables X-Forwarded-For header rotation for rate-limit evasion
+	RotateXForwardedFor bool
+	// XForwardedForIPs is a list of IPs to rotate through for X-Forwarded-For headers
+	XForwardedForIPs []string
+	// DelayJitter adds random jitter to delays between requests to avoid detection
+	DelayJitter bool
 }
 
 // DefaultStealthConfig returns a default stealth configuration
@@ -43,6 +49,8 @@ func DefaultStealthConfig() *StealthConfig {
 		RandomizeUserAgents: true,
 		RandomizeHeaders:    true,
 		DelayRange:          [2]int{50, 200}, // 50-200ms delay
+		RotateXForwardedFor: true,
+		DelayJitter:         true,
 		UserAgents: []string{
 			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -52,6 +60,14 @@ func DefaultStealthConfig() *StealthConfig {
 			"Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
 			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0 Safari/537.36",
 			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+		},
+		XForwardedForIPs: []string{
+			"203.0.113.1", "203.0.113.2", "203.0.113.3", "203.0.113.4", "203.0.113.5",
+			"198.51.100.1", "198.51.100.2", "198.51.100.3", "198.51.100.4", "198.51.100.5",
+			"192.0.2.1", "192.0.2.2", "192.0.2.3", "192.0.2.4", "192.0.2.5",
+			"10.0.0.1", "10.1.1.1", "10.2.2.2", "10.3.3.3", "10.4.4.4",
+			"172.16.0.1", "172.16.1.1", "172.16.2.2", "172.16.3.3", "172.16.4.4",
+			"192.168.0.1", "192.168.1.1", "192.168.2.2", "192.168.3.3", "192.168.4.4",
 		},
 		CommonHeaders: map[string][]string{
 			"Accept": {
@@ -135,12 +151,58 @@ func ApplyStealthFeatures(req *fasthttp.Request, config *StealthConfig) {
 		}
 	}
 
-	// Apply random delay
+	// Apply X-Forwarded-For rotation for rate-limit evasion
+	if config.RotateXForwardedFor && len(config.XForwardedForIPs) > 0 {
+		// Select a random IP from the list
+		ip := config.XForwardedForIPs[rand.Intn(len(config.XForwardedForIPs))]
+
+		// Check if there's an existing X-Forwarded-For header
+		existingXFF := string(req.Header.Peek("X-Forwarded-For"))
+		if existingXFF != "" {
+			// Append the new IP to the existing chain
+			req.Header.Set("X-Forwarded-For", existingXFF+", "+ip)
+		} else {
+			// Set a new X-Forwarded-For header
+			req.Header.Set("X-Forwarded-For", ip)
+		}
+
+		// 30% chance to also set X-Real-IP header for additional evasion
+		if rand.Float32() < 0.3 {
+			req.Header.Set("X-Real-IP", ip)
+		}
+
+		// 20% chance to set Client-IP header for additional evasion
+		if rand.Float32() < 0.2 {
+			req.Header.Set("Client-IP", ip)
+		}
+
+		log.Debug().Str("x-forwarded-for", ip).Msg("Applied X-Forwarded-For rotation")
+	}
+
+	// Apply random delay with jitter for rate-limit evasion
 	if config.DelayRange[0] > 0 || config.DelayRange[1] > 0 {
 		minDelay := config.DelayRange[0]
 		maxDelay := config.DelayRange[1]
+
 		if maxDelay > minDelay {
-			delay := time.Duration(minDelay+rand.Intn(maxDelay-minDelay)) * time.Millisecond
+			baseDelay := minDelay + rand.Intn(maxDelay-minDelay)
+
+			// Add jitter if enabled (±20% of the base delay)
+			if config.DelayJitter {
+				jitterRange := int(float64(baseDelay) * 0.2) // 20% of base delay
+				if jitterRange > 0 {
+					jitter := rand.Intn(jitterRange*2) - jitterRange // -jitterRange to +jitterRange
+					baseDelay += jitter
+
+					// Ensure delay doesn't go below minimum
+					if baseDelay < minDelay {
+						baseDelay = minDelay
+					}
+				}
+			}
+
+			delay := time.Duration(baseDelay) * time.Millisecond
+			log.Debug().Dur("delay", delay).Msg("Applied delay with jitter")
 			time.Sleep(delay)
 		}
 	}
@@ -169,6 +231,15 @@ type Config struct {
 
 	// StealthConfig contains stealth settings
 	StealthConfig *StealthConfig
+
+	// GraphQLConfig contains GraphQL-specific settings
+	GraphQLConfig *GraphQLConfig
+
+	// ReplayConfig contains replay engine settings
+	ReplayConfig *ReplayConfig
+
+	// ReplayEngine is the replay engine instance
+	ReplayEngine *ReplayEngine
 
 	backupClient *BackupClient
 }
@@ -235,6 +306,11 @@ func DoClient(c *HTTPClient, req Request, config *Config) (Response, error) {
 	// Apply stealth features if configured
 	if config.StealthConfig != nil {
 		ApplyStealthFeatures(freq, config.StealthConfig)
+	}
+
+	// Apply GraphQL features if configured
+	if config.GraphQLConfig != nil {
+		ApplyGraphQLFeatures(freq, config.GraphQLConfig)
 	}
 
 	fresp.Header.DisableNormalizing()

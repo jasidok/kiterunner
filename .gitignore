@@ -22,4 +22,5 @@ routes/
 *.txt
 benchmark/
 dist/
-*.kite
+*.kite!/ibotta_kr_results.json
+!/ibotta/kiterunner_results.json
