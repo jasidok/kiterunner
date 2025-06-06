@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/auth"
-	"github.com/assetnote/kiterunner/pkg/convert"
-	httppkg "github.com/assetnote/kiterunner/pkg/http"
-	"github.com/assetnote/kiterunner/pkg/injection"
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/auth"
+	"github.com/assetnote/kiterunner2/pkg/convert"
+	httppkg "github.com/assetnote/kiterunner2/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/injection"
+	"github.com/assetnote/kiterunner2/pkg/log"
 )
 
 // RequestValidator is an interface that lets you add custom validators for what are good and bad responses

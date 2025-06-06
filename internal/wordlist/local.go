@@ -7,12 +7,11 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/log"
 	humanize "github.com/dustin/go-humanize"
 )
 
-
-func GetLocalDirPanic() (string) {
+func GetLocalDirPanic() string {
 	ret, err := GetLocalDir()
 	if err != nil {
 		panic(err)
@@ -26,7 +25,7 @@ func GetLocalDir() (string, error) {
 		return "", fmt.Errorf("failed to get user: %w", err)
 	}
 	dir := usr.HomeDir
-	newpath := filepath.Join(dir, ".cache", "kiterunner", "wordlists")
+	newpath := filepath.Join(dir, ".cache", "kiterunner2", "wordlists")
 	return newpath, err
 }
 
@@ -58,10 +57,10 @@ func GetLocalDirListing() ([]WordlistMetadata, error) {
 	for _, v := range files {
 		r := WordlistMetadata{
 			Shortname: nameConvert(v.Name()),
-			Filename: v.Name(),
-			Cached: true,
-			FileSize: humanize.Bytes(uint64(v.Size())),
-			Source: "local",
+			Filename:  v.Name(),
+			Cached:    true,
+			FileSize:  humanize.Bytes(uint64(v.Size())),
+			Source:    "local",
 		}
 		ret = append(ret, r)
 	}

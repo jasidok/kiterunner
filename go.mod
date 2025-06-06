@@ -1,4 +1,4 @@
-module github.com/assetnote/kiterunner
+module github.com/assetnote/kiterunner2
 
 go 1.15
 

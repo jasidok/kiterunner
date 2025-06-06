@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/log"
 	"github.com/valyala/fasthttp"
 )
 

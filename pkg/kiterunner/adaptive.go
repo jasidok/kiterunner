@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/log"
 )
 
 // AdaptiveConcurrencyManager manages dynamic concurrency based on target performance

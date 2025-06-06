@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 

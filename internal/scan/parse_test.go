@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/assetnote/kiterunner/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/http"
 	"github.com/stretchr/testify/assert"
 )
 

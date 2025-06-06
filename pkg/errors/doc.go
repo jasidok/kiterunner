@@ -8,7 +8,7 @@ representing the errors with corresponding nested depth.
 
 Usage
 
-	import errors2 "github.com/assetnote/kiterunner/pkg/errors"
+	import errors2 "github.com/assetnote/kiterunner2/pkg/errors"
 
 	...
 

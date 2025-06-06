@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/http"
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/log"
 )
 
 // TechnologyFingerprint represents a detected technology

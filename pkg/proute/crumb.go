@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/log"
 	"github.com/beevik/etree"
 	"github.com/francoispqt/gojay"
 	"github.com/google/uuid"

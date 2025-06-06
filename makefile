@@ -1,4 +1,3 @@
-
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
@@ -12,15 +11,15 @@ BENCHTEST="BenchmarkKiterunnerEngineRunGolandSmall100$$"
 PACKAGE="./benchmark/"
 COUNT=5
 SHORTBUILDFLAGS=-extld 'g++' -extldflags '-static'
-BUILDFLAGS="$(SHORTBUILDFLAGS) -X 'github.com/assetnote/kiterunner/cmd/kiterunner/cmd.Version=$(GIT_TAG)' -X 'github.com/assetnote/kiterunner/cmd/kiterunner/cmd.Commit=$(GIT_COMMIT_HASH)' -X 'github.com/assetnote/kiterunner/cmd/kiterunner/cmd.Date=$(DATE)'"
+BUILDFLAGS="$(SHORTBUILDFLAGS) -X 'github.com/assetnote/kiterunner2/cmd/kiterunner2/cmd.Version=$(GIT_TAG)' -X 'github.com/assetnote/kiterunner2/cmd/kiterunner2/cmd.Commit=$(GIT_COMMIT_HASH)' -X 'github.com/assetnote/kiterunner2/cmd/kiterunner2/cmd.Date=$(DATE)'"
 
 build:
 	mkdir -p dist
-	$(GOBUILD) -ldflags $(BUILDFLAGS) -o dist/kr ./cmd/kiterunner
+	$(GOBUILD) -ldflags $(BUILDFLAGS) -o dist/kr2 ./cmd/kiterunner2
 
 build-linux:
 	mkdir -p dist
-	GOOS=linux $(GOBUILD) -tags "netgo osusergo" -a -ldflags $(BUILDFLAGS) -o dist/kr-linux ./cmd/kiterunner
+	GOOS=linux $(GOBUILD) -tags "netgo osusergo" -a -ldflags $(BUILDFLAGS) -o dist/kr2-linux ./cmd/kiterunner2
 
 build-bench-linux:
 	mkdir -p dist
@@ -44,6 +43,3 @@ profile:
 
 gen-proto:
 	bash ./hack/gen-proto.sh
-
-
-

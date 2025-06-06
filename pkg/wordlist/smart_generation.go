@@ -3,8 +3,8 @@ package wordlist
 import (
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/analysis"
-	"github.com/assetnote/kiterunner/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/analysis"
+	"github.com/assetnote/kiterunner2/pkg/http"
 )
 
 // SmartWordlistGenerator generates context-aware wordlists

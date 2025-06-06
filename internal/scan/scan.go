@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/assetnote/kiterunner/pkg/convert"
-	"github.com/assetnote/kiterunner/pkg/encoding"
-	"github.com/assetnote/kiterunner/pkg/http"
-	"github.com/assetnote/kiterunner/pkg/kiterunner"
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/convert"
+	"github.com/assetnote/kiterunner2/pkg/encoding"
+	"github.com/assetnote/kiterunner2/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/kiterunner"
+	"github.com/assetnote/kiterunner2/pkg/log"
 	"github.com/manifoldco/promptui"
 	"github.com/olekukonko/tablewriter"
 )

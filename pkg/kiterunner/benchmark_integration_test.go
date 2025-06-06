@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/assetnote/kiterunner/pkg/http"
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 

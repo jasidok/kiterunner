@@ -3,7 +3,7 @@ package proute
 import (
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/http"
 	"github.com/hashicorp/go-multierror"
 )
 

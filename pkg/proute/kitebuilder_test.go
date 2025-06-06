@@ -3,7 +3,7 @@ package proute
 import (
 	"testing"
 
-	"github.com/assetnote/kiterunner/pkg/kitebuilder"
+	"github.com/assetnote/kiterunner2/pkg/kitebuilder"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 )

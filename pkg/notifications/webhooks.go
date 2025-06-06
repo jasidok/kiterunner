@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/assetnote/kiterunner/pkg/log"
-	"github.com/assetnote/kiterunner/pkg/scoring"
+	"github.com/assetnote/kiterunner2/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/scoring"
 )
 
 // NotificationLevel determines what findings trigger notifications

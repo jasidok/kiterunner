@@ -3,8 +3,8 @@ package proute
 import (
 	"testing"
 
-	"github.com/assetnote/kiterunner/pkg/http"
-	"github.com/assetnote/kiterunner/pkg/kitebuilder"
+	"github.com/assetnote/kiterunner2/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/kitebuilder"
 	"github.com/stretchr/testify/assert"
 )
 

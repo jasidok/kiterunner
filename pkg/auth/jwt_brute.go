@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/log"
 )
 
 // JWTToken represents a parsed JWT token

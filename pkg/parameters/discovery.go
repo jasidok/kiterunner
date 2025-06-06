@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/http"
 )
 
 // CommonParameters contains high-value parameters commonly found in APIs

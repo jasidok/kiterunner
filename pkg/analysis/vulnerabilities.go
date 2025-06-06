@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/assetnote/kiterunner/pkg/http"
-	"github.com/assetnote/kiterunner/pkg/kiterunner"
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/kiterunner"
+	"github.com/assetnote/kiterunner2/pkg/log"
 )
 
 // VulnerabilityDetector implements RequestValidator to detect vulnerabilities during scanning

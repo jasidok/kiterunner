@@ -15,7 +15,7 @@ Hence the 0 allocations corresponds to 0 additional allocations performed while 
 	❯ ulimit -n 20000 && go test '-bench=BenchmarkKiterunnerEngineRunGoland1Async$' -v ./...   -run='^$'  -count=10 -benchtime=10000x -benchmem
 	goos: darwin
 	goarch: amd64
-	pkg: github.com/assetnote/kiterunner/pkg/kiterunner
+	pkg: github.com/assetnote/kiterunner2/pkg/kiterunner
 	BenchmarkKiterunnerEngineRunGoland1Async
 	BenchmarkKiterunnerEngineRunGoland1Async-8         10000             75670 ns/op               5 B/op          0 allocs/op
 	BenchmarkKiterunnerEngineRunGoland1Async-8         10000             79782 ns/op               5 B/op          0 allocs/op
@@ -28,7 +28,7 @@ Hence the 0 allocations corresponds to 0 additional allocations performed while 
 	BenchmarkKiterunnerEngineRunGoland1Async-8         10000             74885 ns/op               6 B/op          0 allocs/op
 	BenchmarkKiterunnerEngineRunGoland1Async-8         10000             74722 ns/op               6 B/op          0 allocs/op
 	PASS
-	ok      github.com/assetnote/kiterunner/pkg/kiterunner  8.170s
+	ok      github.com/assetnote/kiterunner2/pkg/kiterunner  8.170s
 
 The allocation savings primarily derive from aggressively using sync.Pools for objects that are re-used across targets
 and mis-using channels as low cost, cross goroutine communication buffers. These optimisations have resulted in slightly
@@ -65,7 +65,7 @@ This is illustrated in the following flow diagram
  (D) - target_wkr    - schedules a batch of requests for given baseline
  (E) - request_wkr   - results are sent to rx channel for aggregation
 
-This concurrency model was selected based on the benchmarks run in github.com/assetnote/kiterunner/benchmark/concurrency_test.go
+This concurrency model was selected based on the benchmarks run in github.com/assetnote/kiterunner2/benchmark/concurrency_test.go
 where this was determined to provide a compromise between:
  - Allowing for preflight requests to occur concurrently with normal requests
      - The target_wkr does not need to wait for a directory to complete before performing the next preflight requests

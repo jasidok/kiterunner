@@ -10,8 +10,8 @@ import (
 	"os"
 	"reflect"
 
-	errors2 "github.com/assetnote/kiterunner/pkg/errors"
-	"github.com/assetnote/kiterunner/pkg/log"
+	errors2 "github.com/assetnote/kiterunner2/pkg/errors"
+	"github.com/assetnote/kiterunner2/pkg/log"
 	"github.com/hashicorp/go-multierror"
 )
 

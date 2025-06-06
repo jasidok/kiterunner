@@ -15,25 +15,25 @@ quiet: false
 # 🔥 PERFORMANCE & CONCURRENCY SETTINGS
 # ═══════════════════════════════════════════════════════════════════
 
-# Core performance settings
-max-connection-per-host: 10
-max-parallel-hosts: 100
-timeout: "10s"
-delay: "0s"
+# Core performance settings - optimized for comprehensive scanning
+max-connection-per-host: 8
+max-parallel-hosts: 75
+timeout: "8s"
+delay: "100ms"
 
 # Advanced performance features
 adaptive-concurrency: true
-target-response-time: "500ms"
+target-response-time: "750ms"
 performance-mode: "balanced"  # Options: aggressive, balanced, conservative
-max-memory: 1000  # MB
+max-memory: 1500  # MB
 enable-cache: true
-max-cache-size: 200  # MB
+max-cache-size: 300  # MB
 
 # ═══════════════════════════════════════════════════════════════════
 # 🛡️ SECURITY & STEALTH CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════
 
-# Stealth settings
+# Stealth settings - balanced approach
 enable-stealth: true
 stealth-mode: "ninja"  # Options: ghost (max stealth), ninja (balanced), fast (minimal)
 stealth-delay-min: 100  # ms
@@ -47,42 +47,42 @@ stealth-user-agents:
   - "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
 # ═══════════════════════════════════════════════════════════════════
-# 🧠 AI-POWERED FEATURES (PHASE 1)
+# 🧠 AI-POWERED FEATURES (PHASE 1) - ENABLED FOR COMPREHENSIVE SCANNING
 # ═══════════════════════════════════════════════════════════════════
 
-# Enable all AI features
-enable-all-ai-features: false  # Set to true to enable all AI features at once
+# Enable comprehensive AI features for better discovery
+enable-all-ai-features: true  # Set to true to enable all AI features at once
 
-# Individual AI feature controls
+# Individual AI feature controls - all enabled for thorough scanning
 enable-parameter-discovery: true
 enable-vulnerability-detection: true
 enable-response-intelligence: true
 enable-smart-wordlist-generation: true
 
 # ═══════════════════════════════════════════════════════════════════
-# 🔍 ADVANCED DISCOVERY FEATURES (PHASE 2)
+# 🔍 ADVANCED DISCOVERY FEATURES (PHASE 2) - ENABLED
 # ═══════════════════════════════════════════════════════════════════
 
-# Enable all Phase 2 features
-enable-all-phase2-features: false
+# Enable all Phase 2 features for comprehensive discovery
+enable-all-phase2-features: true
 
-# Individual Phase 2 controls
+# Individual Phase 2 controls - all enabled
 enable-multi-method-discovery: true
 enable-header-based-discovery: true
 enable-encoding-bypass: true
 
 # ═══════════════════════════════════════════════════════════════════
-# 📊 INTELLIGENCE & REPORTING (PHASE 4)
+# 📊 INTELLIGENCE & REPORTING (PHASE 4) - ENHANCED OUTPUT
 # ═══════════════════════════════════════════════════════════════════
 
-# Enable all Phase 4 features
-enable-all-phase4-features: false
+# Enable all Phase 4 features for better analysis
+enable-all-phase4-features: true
 
-# Risk scoring
+# Risk scoring - enabled with medium threshold
 enable-risk-scoring: true
 risk-threshold: "medium"  # Options: low, medium, high, critical
 
-# Advanced output formats
+# Advanced output formats - multiple formats for analysis
 enable-advanced-output: true
 output-formats:
   - "json"
@@ -99,9 +99,9 @@ output-dir: "./kiterunner-results"
 # 🔔 NOTIFICATION SETTINGS
 # ═══════════════════════════════════════════════════════════════════
 
-# Enable notifications
-enable-notifications: false
-notification-level: "high"  # Options: all, medium, high, critical
+# Enable notifications for significant findings
+enable-notifications: true
+notification-level: "medium"  # Options: all, medium, high, critical
 
 # Webhook URLs (uncomment and configure as needed)
 # slack-webhook: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
@@ -120,7 +120,7 @@ researcher: "YourName"
 bounty-platform: "hackerone"  # Options: hackerone, bugcrowd, etc
 bounty-program: ""  # Target program name
 
-# Report generation
+# Report generation - comprehensive reporting enabled
 html-report: "./reports/vulnerability-report.html"
 markdown-report: "./reports/bug-bounty-report.md"
 nuclei-output: "./reports/nuclei-templates.yaml"
@@ -131,48 +131,53 @@ sarif-output: "./reports/sarif-results.sarif"
 # 🌐 HTTP & REQUEST SETTINGS
 # ═══════════════════════════════════════════════════════════════════
 
-# Default headers
+# Default headers - comprehensive header set for better discovery
 headers:
   - "x-forwarded-for: 127.0.0.1"
   - "x-real-ip: 127.0.0.1"
   - "x-originating-ip: 127.0.0.1"
+  - "x-forwarded-proto: https"
+  - "x-forwarded-host: localhost"
 
-# Status code filtering
-success-status-codes: [ 200, 201, 202, 204, 301, 302, 307, 308, 401, 403 ]
-fail-status-codes: [ 400, 404, 500, 502, 503, 504 ]
+# Status code filtering - optimized for discovery
+success-status-codes: [ 200, 201, 202, 204, 301, 302, 307, 308, 401, 403, 405 ]
+fail-status-codes: [ 400, 404, 500, 502, 503, 504, 429 ]
 
 # Redirect settings
-max-redirects: 3
+max-redirects: 5
 blacklist-domains: [ ]
 
 # Content filtering
-ignore-length: [ ]  # Example: ["100-105", "1234"]
+ignore-length: [ "0", "34", "1053", "1234" ]  # Common false positive lengths
 
 # ═══════════════════════════════════════════════════════════════════
-# 📁 WORDLIST SETTINGS
+# 📁 WORDLIST SETTINGS - COMPREHENSIVE WORDLIST SELECTION
 # ═══════════════════════════════════════════════════════════════════
 
-# Depth scanning
-preflight-depth: 1
-quarantine-threshold: 10
+# Depth scanning - deeper for better discovery
+preflight-depth: 2
+quarantine-threshold: 20
 wildcard-detection: true
 
-# Assetnote wordlists (examples)
+# Assetnote wordlists - comprehensive selection with reasonable limits
 assetnote-wordlists:
-  - "apiroutes-240528:10000"
-  - "raft-large-words:5000"
-  - "parameters-240528:1000"
+  - "apiroutes-240528:25000"
+  - "raft-large-words:15000"
+  - "parameters-240528:5000"
+  - "aspx-240528:10000"
+  - "html-240528:10000"
+  - "asp_lowercase:8000"
 
 # Custom wordlists
 kitebuilder-wordlists: [ ]
 
 # ═══════════════════════════════════════════════════════════════════
-# 🔧 ADVANCED FEATURES
+# 🔧 ADVANCED FEATURES - OPTIMIZED FOR DISCOVERY
 # ═══════════════════════════════════════════════════════════════════
 
 # Scanning behavior
 disable-precheck: false
-kitebuilder-full-scan: false
+kitebuilder-full-scan: true  # Enable full scan for comprehensive coverage
 progress: true
 
 # Development/Debug
@@ -182,17 +187,15 @@ profile-name: ""
 # 📋 PRESET CONFIGURATIONS
 # ═══════════════════════════════════════════════════════════════════
 
-# Uncomment one of these preset configurations:
+# 🚀 CURRENT: INTELLIGENT BUG BOUNTY MODE WITH AI FEATURES
+# This configuration is optimized for:
+# - Comprehensive API and endpoint discovery
+# - AI-powered analysis and vulnerability detection
+# - Balanced performance and thoroughness
+# - Multiple output formats for analysis
+# - Reasonable resource usage
 
-# 🚀 AGGRESSIVE BUG BOUNTY MODE
-# performance-mode: "aggressive"
-# max-connection-per-host: 20
-# max-parallel-hosts: 200
-# enable-all-ai-features: true
-# enable-all-phase2-features: true
-# enable-all-phase4-features: true
-# enable-notifications: true
-# notification-level: "medium"
+# Alternative presets (comment out above and uncomment one of these):
 
 # 👻 STEALTH MODE
 # performance-mode: "conservative"
@@ -202,6 +205,7 @@ profile-name: ""
 # stealth-delay-min: 500
 # stealth-delay-max: 2000
 # enable-stealth: true
+# enable-all-ai-features: false
 
 # 🏢 ENTERPRISE MODE
 # performance-mode: "balanced"
@@ -211,26 +215,34 @@ profile-name: ""
 # enable-notifications: true
 # max-memory: 2000
 
+# ⚡ SPEED MODE (Less AI, More Speed)
+# performance-mode: "aggressive"
+# max-connection-per-host: 15
+# max-parallel-hosts: 150
+# enable-all-ai-features: false
+# enable-all-phase2-features: false
+# delay: "0s"
+
 # ═══════════════════════════════════════════════════════════════════
 # 💡 USAGE EXAMPLES
 # ═══════════════════════════════════════════════════════════════════
 
-# Command examples using this config:
+# Command examples using this AI-enhanced config:
 #
-# Basic scan with config:
+# Basic comprehensive scan:
 # kiterunner scan target.com -w wordlist.kite
 #
-# Override specific settings:
-# kiterunner scan target.com -w wordlist.kite --max-connection-per-host 5
+# Quick scan with AI features:
+# kiterunner scan target.com -A apiroutes-240528:10000
 #
-# Bug bounty mode:
-# kiterunner scan targets.txt -A apiroutes-240528:20000 --enable-all-ai-features
+# Full comprehensive scan:
+# kiterunner scan targets.txt -A apiroutes-240528:25000,raft-large-words:15000
 #
-# Stealth scan:
-# kiterunner scan target.com --stealth-mode ghost --delay 1s
+# Override for speed:
+# kiterunner scan target.com -w wordlist.kite --max-connection-per-host 15 --delay 0s
 #
-# Enterprise scan with reports:
-# kiterunner scan target.com --enable-advanced-output --html-report report.html
+# Enterprise scan with all reports:
+# kiterunner scan target.com --html-report comprehensive-report.html
 
 # ═══════════════════════════════════════════════════════════════════
 # 📚 DOCUMENTATION LINKS

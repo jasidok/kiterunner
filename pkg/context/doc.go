@@ -6,7 +6,7 @@ The main use-case is to to attach an interrupt signal handler to the context.
 This can be used from your CLI applications to ensure a graceful shutdown of the scanning
 and to clean up any resources mid-flight
 
-	import "github.com/assetnote/kiterunner/pkg/context"
+	import "github.com/assetnote/kiterunner2/pkg/context"
 
 	...
 

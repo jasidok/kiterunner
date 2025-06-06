@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/assetnote/kiterunner/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/log"
 )
 
 // PayloadTemplate represents a template for parameter injection

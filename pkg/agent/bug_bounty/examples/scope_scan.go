@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/assetnote/kiterunner/pkg/agent/bug_bounty"
+	"github.com/assetnote/kiterunner2/pkg/agent/bug_bounty"
 )
 
 func main() {

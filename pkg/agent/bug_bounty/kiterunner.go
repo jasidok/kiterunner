@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/assetnote/kiterunner/pkg/http"
-	"github.com/assetnote/kiterunner/pkg/kiterunner"
-	"github.com/assetnote/kiterunner/pkg/log"
-	"github.com/assetnote/kiterunner/pkg/proute"
+	"github.com/assetnote/kiterunner2/pkg/http"
+	"github.com/assetnote/kiterunner2/pkg/kiterunner"
+	"github.com/assetnote/kiterunner2/pkg/log"
+	"github.com/assetnote/kiterunner2/pkg/proute"
 )
 
 // KiterunnerAgent provides bug bounty-focused API discovery capabilities
